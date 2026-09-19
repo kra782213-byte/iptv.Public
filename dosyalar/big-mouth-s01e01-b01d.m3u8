@@ -1,0 +1,7 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="group_closedual",NAME="Turkish",DEFAULT=YES,URI="https://balancehls9.playmix.uno/hls/bigmauseu-s01e01-webdl-trdual-tt21195490-70s4d5gixlw4mp4-UvvC4wTnw51.mp4/sublist_aud1.txt"
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="group_closedual",NAME="Original Audio",DEFAULT=NO,URI="https://balancehls9.playmix.uno/hls/bigmauseu-s01e01-webdl-trdual-tt21195490-70s4d5gixlw4mp4-UvvC4wTnw51.mp4/sublist_aud2.txt"
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="sub",NAME="Türkçe",LANGUAGE="tr",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,URI="https://raw.githubusercontent.com/kra782213-byte/iptv.Public/main/dosyalar/big-mouth-s01e01-b01d-alt1.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=3862810,RESOLUTION=1920x1080,CODECS="avc1.640028,mp4a.40.2",AUDIO="group_closedual",SUBTITLES="sub"
+https://balancehls9.playmix.uno/hls/bigmauseu-s01e01-webdl-trdual-tt21195490-70s4d5gixlw4mp4-UvvC4wTnw51.mp4/sublist_2.txt
