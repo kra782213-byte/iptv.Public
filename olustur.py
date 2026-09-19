@@ -249,20 +249,19 @@ def isle(f, ayar):
     gid = mevcut or "sub"
     dosyalar, medya = {}, []
     for i, (dil, url) in enumerate(altlar, 1):
-        try:
-            vtt = vtt_isle(metin_indir(url), pts, kaydir)
-        except Exception as e:
-            notlar.append("%s altyazısı indirilemedi: %s" % (dil, e))
-            continue
         vad, lad = "%s-alt%d.vtt" % (ad, i), "%s-alt%d.m3u8" % (ad, i)
-        dosyalar[vad] = vtt
-        dosyalar[lad] = sarmalayici("%s/dosyalar/%s" % (BASE, vad), sure)
+        try:
+            dosyalar[vad] = vtt_isle(metin_indir(url), pts, kaydir)
+            vtt_adresi = "%s/dosyalar/%s" % (BASE, vad)
+        except Exception as e:
+            notlar.append("%s altyazısı GitHub'dan indirilemedi (%s); özgün adrese bağlandı, "
+                          "senkron ayarı uygulanamadı" % (dil, e))
+            vtt_adresi = url
+        dosyalar[lad] = sarmalayici(vtt_adresi, sure)
         medya.append('#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="%s",NAME="%s",LANGUAGE="%s",'
                      'DEFAULT=%s,AUTOSELECT=YES,FORCED=NO,URI="%s/dosyalar/%s"'
                      % (gid, DILLER.get(dil, dil.upper()), dil,
-                        "YES" if (not medya and not mevcut) else "NO", BASE, lad))
-    if not medya:
-        raise ValueError("hiçbir altyazı indirilemedi")
+                        "YES" if (i == 1 and not mevcut) else "NO", BASE, lad))
 
     if ana_mi:
         govde = master_birlestir(metin, master_url, medya, gid)
