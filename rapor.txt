@@ -1,4 +1,4 @@
 IPTV linkin: https://raw.githubusercontent.com/kra782213-byte/iptv.Public/main/liste.m3u
-0 film hazır, 0 hatalı
+0 film hazır, 1 hatalı
 
-
+[HATA]  Big mouth: hiçbir altyazı indirilemedi
