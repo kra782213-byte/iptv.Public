@@ -1,0 +1,17 @@
+termux kurulumu
+
+
+
+
+pkg update -y && pkg install -y python git
+
+git clone https://github.com/kra782213-byte/iptv.Public.git iptv
+cd iptv
+git config user.name "liste"
+git config user.email "liste@example.com"
+
+read -p "Token: " T
+
+git remote set-url origin "https://kra782213-byte:${T}@github.com/kra782213-byte/iptv.Public.git"
+
+echo "alias liste='cd ~/iptv && sh guncelle.sh'" >> ~/.bashrc && source ~/.bashrc
