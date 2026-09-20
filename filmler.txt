@@ -7,7 +7,6 @@
 #
 # Altyazı ayarı (gerekirse ileride açarsın, şimdilik dokunma):
 # @kaydir=0      tüm filmlerde altyazıyı bu kadar saniye kaydırır (+ geciktirir, - öne alır)
-# @harita=hayir  videoyla otomatik senkron ayarını kapatır
 #
 # Örnek (başındaki # işaretini kaldırıp kendi adreslerinle değiştir):
 Big Mouth S01E01 | https://balancehls9.playmix.uno/hls/bigmauseu-s01e01-webdl-trdual-tt21195490-70s4d5gixlw4mp4-UvvC4wTnw51.mp4/master.txt | https://closeload.filmmakinesi.to/vtt/2026/07/UvvC4wTnw51-tr-bigmauseu-s01e01-webdl-trdual-tt21195490-70s4d5gixlw4_subtitles03.tur.vtt
