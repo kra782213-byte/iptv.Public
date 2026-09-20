@@ -338,13 +338,16 @@ def isle(f, ayar):
 # ---------- Ana akış ----------
 def oku(dosya):
     ayar, filmler = {"harita": True, "kaydir": 0.0, "konum": None}, []
+    # @dizi, @kategori ve @logo satırları, kendinden sonraki tüm satırlar için geçerlidir
+    varsayilan = {"dizi": "", "kategori": "", "logo": ""}
     for no, ham in enumerate(Path(dosya).read_text(encoding="utf-8-sig").splitlines(), 1):
         s = ham.strip()
         if not s or s.startswith("#"):
             continue
         if s.startswith("@"):
             k, _, v = s[1:].partition("=")
-            k, v = k.strip().lower(), v.strip().lower()
+            k, v_ham = k.strip().lower(), v.strip()
+            v = v_ham.lower()
             if k == "harita":
                 ayar["harita"] = v not in ("hayir", "hayır", "yok", "0", "kapali", "kapalı")
             elif k == "konum":
@@ -357,10 +360,18 @@ def oku(dosya):
                     ayar["kaydir"] = float(v.replace(",", "."))
                 except ValueError:
                     print("[UYARI] satır %d: @kaydir sayı olmalı" % no)
+            elif k in ("dizi", "kategori", "grup", "logo"):
+                varsayilan["kategori" if k == "grup" else k] = v_ham
+            else:
+                print("[UYARI] satır %d: bilinmeyen ayar @%s" % (no, k))
             continue
         p = [x.strip() for x in re.split(r"\t|\|", s)] + [""] * 6
-        filmler.append({"no": no, "ad": p[0] or "Adsız film", "master": p[1], "alt": p[2],
-                        "logo": p[3], "grup": p[4], "kaydir": p[5]})
+        ad = p[0] or "Adsız film"
+        if varsayilan["dizi"]:
+            ad = varsayilan["dizi"] + " " + ad
+        filmler.append({"no": no, "ad": ad, "master": p[1], "alt": p[2],
+                        "logo": p[3] or varsayilan["logo"],
+                        "grup": p[4] or varsayilan["kategori"], "kaydir": p[5]})
     return ayar, filmler
 
 
