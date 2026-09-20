@@ -11,8 +11,10 @@ import concurrent.futures as cf
 import hashlib
 import math
 import os
+import posixpath
 import re
 import shutil
+import subprocess
 import sys
 import urllib.parse
 import urllib.request
@@ -24,10 +26,34 @@ DILLER = {"tr": "Türkçe", "en": "English", "de": "Deutsch", "fr": "Français",
           "es": "Español", "it": "Italiano", "ru": "Русский", "ar": "العربية",
           "pt": "Português", "nl": "Nederlands", "ja": "日本語", "ko": "한국어"}
 TR = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
-DEPO = os.environ.get("GITHUB_REPOSITORY", "KULLANICI/DEPO")
-DAL = os.environ.get("GITHUB_REF_NAME", "main")
+
+
+def depo_bul():
+    """GitHub'da ortam değişkenlerinden, telefonda git adresinden depoyu bulur."""
+    depo = os.environ.get("GITHUB_REPOSITORY")
+    dal = os.environ.get("GITHUB_REF_NAME")
+    if not depo:
+        try:
+            url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"],
+                                          text=True, stderr=subprocess.DEVNULL).strip()
+            m = re.search(r"github\.com[:/]+([^/]+/[^/]+?)(?:\.git)?/?$", url)
+            if m:
+                depo = m.group(1)
+        except Exception:
+            pass
+    if depo and not dal:
+        try:
+            dal = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                                          text=True, stderr=subprocess.DEVNULL).strip()
+        except Exception:
+            pass
+    return depo or "KULLANICI/DEPO", dal or "main"
+
+
+DEPO, DAL = depo_bul()
 BASE = "https://raw.githubusercontent.com/%s/%s" % (DEPO, DAL)
 KLASOR = Path("dosyalar")
+YEREL = Path("altyazilar")
 VARSAYILAN_SURE = 4 * 3600
 URL_RE = re.compile(r"^https?://\S+$")
 
@@ -44,6 +70,26 @@ def indir(url, en_fazla=None):
 
 def metin_indir(url):
     veri = indir(url)
+    for kodlama in ("utf-8-sig", "cp1254"):
+        try:
+            return veri.decode(kodlama)
+        except UnicodeDecodeError:
+            pass
+    return veri.decode("utf-8", "replace")
+
+
+def yerel_dosya(url):
+    """altyazilar/ klasöründe adresin dosya adıyla aynı adlı dosya var mı?"""
+    ad = posixpath.basename(urllib.parse.urlsplit(url).path)
+    if ad and YEREL.is_dir():
+        for d in YEREL.iterdir():
+            if d.is_file() and d.name.lower() == ad.lower():
+                return ad, d
+    return ad, None
+
+
+def dosya_oku(yol):
+    veri = yol.read_bytes()
     for kodlama in ("utf-8-sig", "cp1254"):
         try:
             return veri.decode(kodlama)
@@ -119,9 +165,10 @@ def zaman_yaz(t):
     return "%02d:%02d:%02d.%03d" % (ms // 3600000, ms // 60000 % 60, ms // 1000 % 60, ms % 1000)
 
 
-def vtt_isle(metin, pts, kaydir):
-    satirlar = [s for s in metin.replace("\r", "").lstrip("\ufeff").split("\n")
-                if not s.startswith("X-TIMESTAMP-MAP")]
+def vtt_isle(metin, pts, kaydir, konum=None):
+    satirlar = metin.replace("\r", "").lstrip("\ufeff").split("\n")
+    if pts is not None:   # kendi haritamızı yazacaksak eskisini sil
+        satirlar = [s for s in satirlar if not s.startswith("X-TIMESTAMP-MAP")]
     while satirlar and not satirlar[0].strip():
         satirlar.pop(0)
     if not satirlar or not satirlar[0].startswith("WEBVTT"):
@@ -134,7 +181,10 @@ def vtt_isle(metin, pts, kaydir):
 
     for i, s in enumerate(satirlar):
         if "-->" in s:
-            satirlar[i] = ZAMAN.sub(degistir, s)
+            s = ZAMAN.sub(degistir, s)
+            if konum is not None and "line:" not in s:
+                s = s.rstrip() + " line:%d%%" % konum   # altyazıyı yukarı al
+            satirlar[i] = s
     if pts is not None:
         satirlar.insert(1, "X-TIMESTAMP-MAP=MPEGTS:%d,LOCAL:00:00:00.000" % pts)
     return "\n".join(satirlar) + "\n"
@@ -250,12 +300,19 @@ def isle(f, ayar):
     dosyalar, medya = {}, []
     for i, (dil, url) in enumerate(altlar, 1):
         vad, lad = "%s-alt%d.vtt" % (ad, i), "%s-alt%d.m3u8" % (ad, i)
+        dosya_adi, yerel = yerel_dosya(url)
         try:
-            dosyalar[vad] = vtt_isle(metin_indir(url), pts, kaydir)
+            ham = dosya_oku(yerel) if yerel else metin_indir(url)
+            ozgun = re.search(r"X-TIMESTAMP-MAP=(\S+)", ham)
+            notlar.append("özgün altyazıda harita: %s" % (ozgun.group(1) if ozgun else "yok"))
+            dosyalar[vad] = vtt_isle(ham, pts, kaydir, ayar["konum"])
             vtt_adresi = "%s/dosyalar/%s" % (BASE, vad)
+            if yerel:
+                notlar.append("%s altyazısı altyazilar/ klasöründen alındı" % dil)
         except Exception as e:
-            notlar.append("%s altyazısı GitHub'dan indirilemedi (%s); özgün adrese bağlandı, "
-                          "senkron ayarı uygulanamadı" % (dil, e))
+            notlar.append("%s altyazısı indirilemedi (%s); özgün adrese bağlandı. "
+                          "Kendin yüklemek istersen dosyayı altyazilar/%s adıyla yükle"
+                          % (dil, e, dosya_adi))
             vtt_adresi = url
         dosyalar[lad] = sarmalayici(vtt_adresi, sure)
         medya.append('#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="%s",NAME="%s",LANGUAGE="%s",'
@@ -280,7 +337,7 @@ def isle(f, ayar):
 
 # ---------- Ana akış ----------
 def oku(dosya):
-    ayar, filmler = {"harita": True, "kaydir": 0.0}, []
+    ayar, filmler = {"harita": True, "kaydir": 0.0, "konum": None}, []
     for no, ham in enumerate(Path(dosya).read_text(encoding="utf-8-sig").splitlines(), 1):
         s = ham.strip()
         if not s or s.startswith("#"):
@@ -290,6 +347,11 @@ def oku(dosya):
             k, v = k.strip().lower(), v.strip().lower()
             if k == "harita":
                 ayar["harita"] = v not in ("hayir", "hayır", "yok", "0", "kapali", "kapalı")
+            elif k == "konum":
+                try:
+                    ayar["konum"] = int(float(v.replace(",", "."))) if v else None
+                except ValueError:
+                    print("[UYARI] satır %d: @konum sayı olmalı (örn. 80)" % no)
             elif k == "kaydir":
                 try:
                     ayar["kaydir"] = float(v.replace(",", "."))
