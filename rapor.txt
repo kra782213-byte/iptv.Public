@@ -1,4 +1,4 @@
 IPTV linkin: https://raw.githubusercontent.com/kra782213-byte/iptv.Public/main/liste.m3u
 1 film hazır, 0 hatalı
 
-[TAMAM] Big Mouth S01E01 (tr altyazısı GitHub'dan indirilemedi (HTTP Error 451: Unavailable For Legal Reasons); özgün adrese bağlandı, senkron ayarı uygulanamadı; zaman haritası eklendi (1.48 sn))
+[TAMAM] Big Mouth S01E01 (özgün altyazıda harita: yok; zaman haritası eklendi (1.48 sn))
